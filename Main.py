@@ -6,20 +6,41 @@ import pygame
 # ------------
 
 
+# -----------------------
+# init variables
+# -----------------------
+screen_w = 750
+screen_h = 850
+screen_bg = (0, 0, 0)
+maze_w = 662
+maze_h = 662
+maze_size = 30
+maze_bg = (100, 100, 100)
+cell_size = 20
+cell_margin = 2
+cell_path = (200, 200, 200)
+
+
 # ------------
-# init program
+# init program & objects
 # ------------
 pygame.init()
 clock = pygame.time.Clock()
 pygame.display.set_caption("Maze Solver")
-screen = pygame.display.set_mode((750, 900))
-game_font = pygame.font.Font("freesansbold.ttf", 24)
+screen = pygame.display.set_mode((screen_w, screen_h))
+maze_area = pygame.Rect(50, 150, maze_w, maze_h)
+maze_grid = [[1 for x in range(maze_size)] for y in range(maze_size)]
+maze = [[pygame.Rect(52 + (cell_size + cell_margin) * x,
+                    152 + (cell_size + cell_margin) * y,
+                    cell_size, cell_size)
+                    for x in range(maze_size)]
+                    for y in range(maze_size)]
+
+# =====================================================
+# 2 list or 1 like [state: cell.obj]
+# =====================================================
 
 
-# -----------------------
-# init variables
-# -----------------------
-maze_area = pygame.Rect(50, 200, 650, 650)
 
 
 # ------------
@@ -31,8 +52,11 @@ def event_handler(event):
         sys.exit()
 
 def screen_update():
-    screen.fill((0, 0, 0))
-    pygame.draw.rect(screen, (100, 100, 100), maze_area)
+    screen.fill(screen_bg)
+    pygame.draw.rect(screen, maze_bg, maze_area)
+    for row in maze:
+        for cell in row:
+            pygame.draw.rect(screen, cell_path, cell)
     pygame.display.flip()
 
 
