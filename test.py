@@ -13,12 +13,12 @@ def solve_maze(maze, y, x, sol):
         if solve_maze(maze, y, x+1, sol):
             return True
 
-        # check if x-1 is valid
-        if solve_maze(maze, y, x-1, sol):
-            return True
-
         # check if y+1 is valid
         if solve_maze(maze, y+1, x, sol):
+            return True
+            
+        # check if x-1 is valid
+        if solve_maze(maze, y, x-1, sol):
             return True
 
         # check if y-1 is valid
