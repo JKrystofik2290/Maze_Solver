@@ -214,6 +214,7 @@ while True:
     screen_update(120)
 
 # todo:
+    # maze class
     # backtracking knows where it is starting so chose search profile based on this
     # indicator or popup when done and color/text based off if it found the exit + time took
     # instructions on how to make maze and start/stop/select Solver
