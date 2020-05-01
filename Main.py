@@ -1,12 +1,13 @@
 import sys
 import pygame
 import numpy as np
+import random as rand
 
 
 # ------------
 #   classes
 # ------------
-class cell():
+class cell:
     def __init__(self, x_offset, y_offset, x, y, size, margin):
         self.size = size
         self.margin = margin
@@ -26,11 +27,9 @@ class cell():
                 if (pygame.key.get_pressed()[pygame.K_RSHIFT] == 1
                 or pygame.key.get_pressed()[pygame.K_LSHIFT] == 1):
                     # start (can only have 1)
-                    for row in maze:
-                        for cell in row:
-                            if cell.state == 2:
-                                cell.state = 1
-                                cell.color = valid_path_color
+                    if maze[maze_start[0]][maze_start[1]].state == 2:
+                        maze[maze_start[0]][maze_start[1]].state = 1
+                        maze[maze_start[0]][maze_start[1]].color = valid_path_color
                     self.state = 2
                     self.color = start_color
                     maze_start = (np.where(np.isin(maze, self))[0][0],
@@ -90,6 +89,7 @@ def backtracking_solver(maze, row, col):
     if (row >= 0 and row < maze_size
     and col >= 0 and col < maze_size
     and maze[row][col].state == 3):
+
         maze[row][col].solution = 1
         maze[row][col].color = start_color
         screen_update(60)
@@ -105,35 +105,17 @@ def backtracking_solver(maze, row, col):
         maze[row][col].color = start_color
         screen_update(60)
 
-        if backtracking_solver(maze, row, col + 1):
-            return True
+        # all 8 possible moves randomized each call
+        dir = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]]
+        rand.shuffle(dir)
 
-        if backtracking_solver(maze, row, col - 1):
-            return True
+        for i in range(len(dir)):
+            # pygame.time.wait(10)
+            if backtracking_solver(maze, row + dir[i][0], col + dir[i][1]):
+                return True
 
-        if backtracking_solver(maze, row + 1, col + 1):
-            return True
-
-        if backtracking_solver(maze, row - 1, col - 1):
-            return True
-
-        if backtracking_solver(maze, row + 1, col - 1):
-            return True
-
-        if backtracking_solver(maze, row - 1, col + 1):
-            return True
-
-        if backtracking_solver(maze, row + 1, col):
-            return True
-
-        if backtracking_solver(maze, row - 1, col):
-            return True
-
-        # set current spot to not valid
+        # set current spot to not valid & been visited
         maze[row][col].solution = 10
-        # flash red to show bad path
-        maze[row][col].color = exit_color
-        screen_update(30)
         maze[row][col].color = valid_path_color
         screen_update(60)
         return False
@@ -144,23 +126,23 @@ def backtracking_solver(maze, row, col):
 # -----------------------
 # init variables
 # -----------------------
-top_padding = 100
+maze_size = 30
+maze_start = (0, 0)
+maze_start_exist = True
 cell_size = (20, 20)
 cell_margin = 2
 valid_path_color = (200, 200, 200)
 start_color = (50, 200, 50)
 exit_color = (200, 50, 50)
 wall_color = (0, 0, 0)
+top_padding = 100
 maze_bg_padding = 25
-maze_size = 30
 maze_bg_w = maze_size * (cell_size[0] + cell_margin) + cell_margin
 maze_bg_h = maze_size * (cell_size[1] + cell_margin) + cell_margin
 maze_bg_color = (100, 100, 100)
 screen_w = maze_bg_w + 2 * maze_bg_padding
 screen_h = maze_bg_h + 2 * maze_bg_padding + top_padding
 screen_bg_color = (0, 0, 0)
-maze_start = (0, 0)
-maze_start_exist = True
 
 
 # ------------
@@ -211,11 +193,12 @@ while True:
                 maze = reset(maze)
 
     # screen update
-    screen_update(120)
+    screen_update(60)
 
 # todo:
-    # maze class
-    # backtracking knows where it is starting so chose search profile based on this
+    # check cpu usage
+    # when adding to website get like to online python runner
+    # random direction list for backtracking
     # indicator or popup when done and color/text based off if it found the exit + time took
     # instructions on how to make maze and start/stop/select Solver
     # add other path finding methods (A*)
