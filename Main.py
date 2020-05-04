@@ -8,54 +8,63 @@ import random as rand
 #   classes
 # ------------
 class cell:
-    def __init__(self, x_offset, y_offset, x, y, size, margin):
+    def __init__(self, x_offset, y_offset, x, y, size, margin, state):
         self.size = size
         self.margin = margin
-        self.state = 1
         self.solution = 0
-        self.color = valid_path_color
+        self.state = state
+        if state == 0:
+            self.color = wall_color
+        elif state == 1:
+            self.color = valid_path_color
+        elif state == 2:
+            self.color = start_color
+        elif state == 3:
+            self.color = exit_color
+
         self.obj = pygame.Rect((self.size[0] + self.margin) * x + x_offset,
                                (self.size[1] + self.margin) * y + y_offset,
                                self.size[0], self.size[1])
 
     def update(self):
         global maze_start, maze_start_exist
-        if self.obj.collidepoint(pygame.mouse.get_pos()):
-            # left mouse click
-            if pygame.mouse.get_pressed()[0] == 1:
-                # shift + left mouse click
-                if (pygame.key.get_pressed()[pygame.K_RSHIFT] == 1
-                or pygame.key.get_pressed()[pygame.K_LSHIFT] == 1):
-                    # start (can only have 1)
-                    if maze[maze_start[0]][maze_start[1]].state == 2:
-                        maze[maze_start[0]][maze_start[1]].state = 1
-                        maze[maze_start[0]][maze_start[1]].color = valid_path_color
-                    self.state = 2
-                    self.color = start_color
-                    maze_start = (np.where(np.isin(maze, self))[0][0],
-                                  np.where(np.isin(maze, self))[1][0])
-                    maze_start_exist = True
-                else:
+        if solver_running == False:
+            if self.obj.collidepoint(pygame.mouse.get_pos()):
+                # left mouse click
+                if pygame.mouse.get_pressed()[0] == 1:
+                    # shift + left mouse click
+                    if (pygame.key.get_pressed()[pygame.K_RSHIFT] == 1
+                    or pygame.key.get_pressed()[pygame.K_LSHIFT] == 1):
+                        # start (can only have 1)
+                        if maze[maze_start[0]][maze_start[1]].state == 2:
+                            maze[maze_start[0]][maze_start[1]].state = 1
+                            maze[maze_start[0]][maze_start[1]].color = valid_path_color
+                        self.state = 2
+                        self.color = start_color
+                        maze_start = (np.where(np.isin(maze, self))[0][0],
+                                      np.where(np.isin(maze, self))[1][0])
+                        maze_start_exist = True
+                    else:
+                        if self.state == 2:
+                            maze_start_exist = False
+                        # wall
+                        self.state = 0
+                        self.color = wall_color
+
+                # right mouse click
+                if pygame.mouse.get_pressed()[2] == 1:
                     if self.state == 2:
                         maze_start_exist = False
-                    # wall
-                    self.state = 0
-                    self.color = wall_color
-
-            # right mouse click
-            if pygame.mouse.get_pressed()[2] == 1:
-                if self.state == 2:
-                    maze_start_exist = False
-                # shift + right mouse click
-                if (pygame.key.get_pressed()[pygame.K_RSHIFT] == 1
-                or pygame.key.get_pressed()[pygame.K_LSHIFT] == 1):
-                    # exit
-                    self.state = 3
-                    self.color = exit_color
-                else:
-                    # valid path
-                    self.state = 1
-                    self.color = valid_path_color
+                    # shift + right mouse click
+                    if (pygame.key.get_pressed()[pygame.K_RSHIFT] == 1
+                    or pygame.key.get_pressed()[pygame.K_LSHIFT] == 1):
+                        # exit
+                        self.state = 3
+                        self.color = exit_color
+                    else:
+                        # valid path
+                        self.state = 1
+                        self.color = valid_path_color
 
         pygame.draw.rect(screen, self.color, self.obj)
 
@@ -73,26 +82,38 @@ def screen_update(t):
     clock.tick(t)
 
 def reset(new_maze):
-    new_maze = [[cell(maze_bg_padding + cell_margin,
-                 maze_bg_padding + cell_margin + top_padding,
-                 x, y, cell_size, cell_margin)
-              for x in range(maze_size)]
-              for y in range(maze_size)]
-    new_maze[maze_start[0]][maze_start[1]].state = 2
-    new_maze[maze_start[0]][maze_start[1]].color = start_color
-    new_maze[maze_size - 1][maze_size - 1].state = 3
-    new_maze[maze_size - 1][maze_size - 1].color = exit_color
+    for row in new_maze:
+        for cell in row:
+            cell.solution = 0
+            if cell.state == 3:
+                cell.color = exit_color
+            elif cell.state == 1:
+                cell.color = valid_path_color
+
     return new_maze
 
 def backtracking_solver(maze, row, col):
-    # at exit?
+    global exit_solver
+
+    # need to handle events to not freeze/crash during recusion
+    # also added ability to stop solver
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                exit_solver = True
+                return False
+
+    # at maze exit?
     if (row >= 0 and row < maze_size
     and col >= 0 and col < maze_size
     and maze[row][col].state == 3):
 
         maze[row][col].solution = 1
         maze[row][col].color = start_color
-        screen_update(60)
+        screen_update(30)
         return True
 
     # is current spot valid and not already visited?
@@ -103,21 +124,27 @@ def backtracking_solver(maze, row, col):
 
         maze[row][col].solution = 1
         maze[row][col].color = start_color
-        screen_update(60)
+        screen_update(30)
 
         # all 8 possible moves randomized each call
         dir = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]]
         rand.shuffle(dir)
 
         for i in range(len(dir)):
-            # pygame.time.wait(10)
+            if exit_solver:
+                return False
             if backtracking_solver(maze, row + dir[i][0], col + dir[i][1]):
                 return True
 
         # set current spot to not valid & been visited
         maze[row][col].solution = 10
+
+        # flash red to show backtracking
+        maze[row][col].color = exit_color
+        screen_update(20)
+        # then retrun to valid_path_color
         maze[row][col].color = valid_path_color
-        screen_update(60)
+        screen_update(30)
         return False
 
     return False
@@ -127,8 +154,41 @@ def backtracking_solver(maze, row, col):
 # init variables
 # -----------------------
 maze_size = 30
-maze_start = (0, 0)
+# need to change starting_maze if maze_size is changed from 30
+starting_maze = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                 [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1],
+                 [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                 [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                 [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+                 [0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1],
+                 [1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1],
+                 [0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1],
+                 [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1],
+                 [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1],
+                 [1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1],
+                 [1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 3, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
+# need to change maze_start to match start of starting_maze
+maze_start = (0, 14)
 maze_start_exist = True
+solver_running = False
 cell_size = (20, 20)
 cell_margin = 2
 valid_path_color = (200, 200, 200)
@@ -143,6 +203,7 @@ maze_bg_color = (100, 100, 100)
 screen_w = maze_bg_w + 2 * maze_bg_padding
 screen_h = maze_bg_h + 2 * maze_bg_padding + top_padding
 screen_bg_color = (0, 0, 0)
+exit_solver = False
 
 
 # ------------
@@ -157,13 +218,9 @@ maze_bg = pygame.Rect(maze_bg_padding,
                       maze_bg_w, maze_bg_h)
 maze = [[cell(maze_bg_padding + cell_margin,
               maze_bg_padding + cell_margin + top_padding,
-              x, y, cell_size, cell_margin)
+              x, y, cell_size, cell_margin, starting_maze[y][x])
           for x in range(maze_size)]
           for y in range(maze_size)]
-maze[maze_start[0]][maze_start[1]].state = 2
-maze[maze_start[0]][maze_start[1]].color = start_color
-maze[maze_size - 1][maze_size - 1].state = 3
-maze[maze_size - 1][maze_size - 1].color = exit_color
 
 
 # ------------
@@ -179,12 +236,19 @@ while True:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 if maze_start_exist:
+                    solver_running = True
                     # add algorithm selector logic here
                     # if backtracking == selected:
                     if backtracking_solver(maze, maze_start[0], maze_start[1]):
                         print('done!')
+                    elif exit_solver:
+                        print('solver stopped!')
+                        exit_solver = False
                     else:
                         print('No Exit Found!')
+
+                    solver_running = False
+
                 else:
                     # add erro/popup here
                     print('No Maze Start!')
@@ -196,9 +260,7 @@ while True:
     screen_update(60)
 
 # todo:
-    # check cpu usage
     # when adding to website get like to online python runner
-    # random direction list for backtracking
     # indicator or popup when done and color/text based off if it found the exit + time took
     # instructions on how to make maze and start/stop/select Solver
     # add other path finding methods (A*)
