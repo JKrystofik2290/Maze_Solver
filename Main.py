@@ -68,12 +68,47 @@ class cell:
 
         pygame.draw.rect(screen, self.color, self.obj)
 
+class button:
+    def __init__(self, label, x, y, w, h):
+        self.label = font.render(label, True, (33, 33, 33))
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.obj = pygame.Rect(x, y, w, h)
+        self.state = False
+        self.color = not_selected
+
+    def update(self):
+        if solver_running == False:
+            if self.obj.collidepoint(pygame.mouse.get_pos()):
+                # left mouse click
+                if pygame.mouse.get_pressed()[0] == 1:
+                    if self.state:
+                        self.state = False
+                        self.color = not_selected
+                    else:
+                        # add code here to de-select anyother button
+                        self.state = True
+                        self.color = selected
+
+        pygame.draw.rect(screen, self.color, self.obj)
+        screen.blit(self.label, (self.x + self.w // 2 - self.label.get_rect().width // 2,
+                                 self.y + self.h // 2 - self.label.get_rect().height // 2))
+
 
 # ------------
 #  functions
 # ------------
 def screen_update(t):
     screen.fill(screen_bg_color)
+    screen.blit(instructions_header, (maze_bg_padding, 5))
+    screen.blit(instructions_wall, (maze_bg_padding, 27))
+    screen.blit(instructions_path, (maze_bg_padding, 49))
+    screen.blit(instructions_start, (maze_bg_padding, 71))
+    screen.blit(instructions_exit, (maze_bg_padding, 93))
+    screen.blit(instructions_run, (maze_bg_padding, 115))
+    screen.blit(instructions_reset, (maze_bg_padding, 137))
     pygame.draw.rect(screen, maze_bg_color, maze_bg)
     for row in maze:
         for cell in row:
@@ -91,6 +126,14 @@ def reset(new_maze):
                 cell.color = valid_path_color
 
     return new_maze
+
+def popup(msg, bg_color):
+    text = font.render(msg, True, text_color)
+    popup = pygame.Rect(screen_w // 2 - 75, screen_h // 2 + 50, 150, 50)
+    pygame.draw.rect(screen, bg_color, popup)
+    screen.blit(text, (screen_w // 2 - text.get_rect().width // 2, screen_h // 2 + 62))
+    pygame.display.flip()
+    pygame.time.wait(1500)
 
 def backtracking_solver(maze, row, col):
     global exit_solver
@@ -154,7 +197,7 @@ def backtracking_solver(maze, row, col):
 # init variables
 # -----------------------
 maze_size = 30
-# need to change starting_maze if maze_size is changed from 30
+# need to change starting_maze if maze_size is changed (maze_size = 30 when made)
 starting_maze = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
                  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                  [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
@@ -188,14 +231,13 @@ starting_maze = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0,
 # need to change maze_start to match start of starting_maze
 maze_start = (0, 14)
 maze_start_exist = True
-solver_running = False
 cell_size = (20, 20)
 cell_margin = 2
 valid_path_color = (200, 200, 200)
 start_color = (50, 200, 50)
 exit_color = (200, 50, 50)
 wall_color = (0, 0, 0)
-top_padding = 100
+top_padding = 150
 maze_bg_padding = 25
 maze_bg_w = maze_size * (cell_size[0] + cell_margin) + cell_margin
 maze_bg_h = maze_size * (cell_size[1] + cell_margin) + cell_margin
@@ -203,7 +245,12 @@ maze_bg_color = (100, 100, 100)
 screen_w = maze_bg_w + 2 * maze_bg_padding
 screen_h = maze_bg_h + 2 * maze_bg_padding + top_padding
 screen_bg_color = (0, 0, 0)
+solver_running = False
 exit_solver = False
+font_size = 20
+text_color = (220, 220, 220)
+not_selected = (150, 150, 150)
+selected = (190, 190, 190)
 
 
 # ------------
@@ -213,6 +260,14 @@ pygame.init()
 clock = pygame.time.Clock()
 pygame.display.set_caption("Maze Solver")
 screen = pygame.display.set_mode((screen_w, screen_h))
+font = pygame.font.SysFont("arial", font_size, True)
+instructions_header = font.render("Instructions:", True, text_color)
+instructions_wall = font.render("Left Mouse Click = Maze Wall", True, text_color)
+instructions_path = font.render("Right Mouse Click = Maze Path", True, text_color)
+instructions_start = font.render("Shift + Left Mouse Click = Maze Start (Only 1)", True, text_color)
+instructions_exit = font.render("Shift + Right Mouse Click = Maze Exit (Any #)", True, text_color)
+instructions_run = font.render("Space = Start/Stop Maze Solver", True, text_color)
+instructions_reset = font.render("R = Reset Maze", True, text_color)
 maze_bg = pygame.Rect(maze_bg_padding,
                       maze_bg_padding + top_padding,
                       maze_bg_w, maze_bg_h)
@@ -221,7 +276,6 @@ maze = [[cell(maze_bg_padding + cell_margin,
               x, y, cell_size, cell_margin, starting_maze[y][x])
           for x in range(maze_size)]
           for y in range(maze_size)]
-
 
 # ------------
 #  Main Loop
@@ -238,20 +292,20 @@ while True:
                 if maze_start_exist:
                     solver_running = True
                     # add algorithm selector logic here
+                        # at end if no maze selected popup('No Algorithm Selected!', exit_color)
                     # if backtracking == selected:
                     if backtracking_solver(maze, maze_start[0], maze_start[1]):
-                        print('done!')
+                        popup('DONE!', start_color)
                     elif exit_solver:
-                        print('solver stopped!')
+                        popup('Solver Stopped!', exit_color)
                         exit_solver = False
                     else:
-                        print('No Exit Found!')
+                        popup('No Exit Found!', exit_color)
 
                     solver_running = False
 
                 else:
-                    # add erro/popup here
-                    print('No Maze Start!')
+                    popup('No Maze Start!', exit_color)
 
             if event.key == pygame.K_r:
                 maze = reset(maze)
@@ -260,9 +314,8 @@ while True:
     screen_update(60)
 
 # todo:
-    # when adding to website get like to online python runner
-    # indicator or popup when done and color/text based off if it found the exit + time took
-    # instructions on how to make maze and start/stop/select Solver
-    # add other path finding methods (A*)
-        # for each method display rules i.e. can/cannot move diaginal
-        # selector to switch between them
+    # move whole thing to Django????? XD  i know but it might be best
+    # selector for Solver algorithm
+    # add other path finding methods
+        # A*
+        # dijkstra's algorithm
