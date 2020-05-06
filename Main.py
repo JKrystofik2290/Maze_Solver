@@ -319,3 +319,7 @@ while True:
     # add other path finding methods
         # A*
         # dijkstra's algorithm
+
+
+# https://www.algoexpert.io/questions/Find%20Closest%20Value%20In%20BST
+# https://brilliant.org/?utm_medium=sponsor&utm_source=youtube&utm_campaign=csdojo_0919
