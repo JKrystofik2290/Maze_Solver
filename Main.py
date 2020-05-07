@@ -314,12 +314,11 @@ while True:
     screen_update(60)
 
 # todo:
-    # get rid of global using dict = {'val': 1}
+    # move whole thing to Django????? XD  i know but it might be best
     # selector for Solver algorithm
     # add other path finding methods
         # A*
         # dijkstra's algorithm
 
 
-# https://www.algoexpert.io/questions/Find%20Closest%20Value%20In%20BST
-# https://brilliant.org/?utm_medium=sponsor&utm_source=youtube&utm_campaign=csdojo_0919
+#  next project: https://www.youtube.com/watch?v=Wo5dMEP_BbI
