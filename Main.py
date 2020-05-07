@@ -314,7 +314,7 @@ while True:
     screen_update(60)
 
 # todo:
-    # move whole thing to Django????? XD  i know but it might be best
+    # get rid of global using dict = {'val': 1}
     # selector for Solver algorithm
     # add other path finding methods
         # A*
