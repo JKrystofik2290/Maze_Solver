@@ -68,33 +68,32 @@ class cell:
 
         pygame.draw.rect(screen, self.color, self.obj)
 
-class button:
-    def __init__(self, label, x, y, w, h):
-        self.label = font.render(label, True, (33, 33, 33))
+class selectors:
+    def __init__(self, listOfLabel, x, y, w, h, margin):
+        self.labels = []
+        self.objs = []
+        self.states = []
+        self.colors = []
         self.x = x
         self.y = y
         self.w = w
         self.h = h
-        self.obj = pygame.Rect(x, y, w, h)
-        self.state = False
-        self.color = not_selected
+        self.margin = margin
+
+        for i in range(len(listOfLabel)):
+            self.labels.append(font.render(listOfLabel[i], True, (33, 33, 33)))
+            self.objs.append(pygame.Rect(x, y + (h + margin)*i, w, h))
+            self.states.append(False)
+            self.colors.append(not_selected)
 
     def update(self):
         if solver_running == False:
-            if self.obj.collidepoint(pygame.mouse.get_pos()):
-                # left mouse click
-                if pygame.mouse.get_pressed()[0] == 1:
-                    if self.state:
-                        self.state = False
-                        self.color = not_selected
-                    else:
-                        # add code here to de-select anyother button
-                        self.state = True
-                        self.color = selected
-
-        pygame.draw.rect(screen, self.color, self.obj)
-        screen.blit(self.label, (self.x + self.w // 2 - self.label.get_rect().width // 2,
-                                 self.y + self.h // 2 - self.label.get_rect().height // 2))
+            for i in range(len(self.labels)):
+                pygame.draw.rect(screen, self.colors[i], self.objs[i])
+                screen.blit(self.labels[i],
+                           (self.x + self.w // 2 - self.labels[i].get_rect().width // 2,
+                           (self.y + i*(self.h + self.margin)
+                            + self.h // 2) - self.labels[i].get_rect().height // 2))
 
 
 # ------------
@@ -109,10 +108,12 @@ def screen_update(t):
     screen.blit(instructions_exit, (maze_bg_padding, 93))
     screen.blit(instructions_run, (maze_bg_padding, 115))
     screen.blit(instructions_reset, (maze_bg_padding, 137))
+    algorithmSelectors.update()
     pygame.draw.rect(screen, maze_bg_color, maze_bg)
     for row in maze:
         for cell in row:
             cell.update()
+
     pygame.display.flip()
     clock.tick(t)
 
@@ -249,8 +250,8 @@ solver_running = False
 exit_solver = False
 font_size = 20
 text_color = (220, 220, 220)
-not_selected = (150, 150, 150)
-selected = (190, 190, 190)
+not_selected = (190, 190, 190)
+selected = (0, 222, 20)
 
 
 # ------------
@@ -276,6 +277,14 @@ maze = [[cell(maze_bg_padding + cell_margin,
               x, y, cell_size, cell_margin, starting_maze[y][x])
           for x in range(maze_size)]
           for y in range(maze_size)]
+# algorithms needs to be updated when adding a new algorithm
+# and must correlate index of algorithm name to event call in main loop
+algorithms = ['A*', 'Dijkstra', 'Random Backtracking']
+algorithmSelectors = selectors(algorithms, screen_w - 225, 5, 200, 45, 5)
+# init default selection
+algorithmSelectors.states[2] = True
+algorithmSelectors.colors[2] = selected
+
 
 # ------------
 #  Main Loop
@@ -291,16 +300,20 @@ while True:
             if event.key == pygame.K_SPACE:
                 if maze_start_exist:
                     solver_running = True
-                    # add algorithm selector logic here
-                        # at end if no maze selected popup('No Algorithm Selected!', exit_color)
-                    # if backtracking == selected:
-                    if backtracking_solver(maze, maze_start[0], maze_start[1]):
-                        popup('DONE!', start_color)
-                    elif exit_solver:
-                        popup('Solver Stopped!', exit_color)
-                        exit_solver = False
-                    else:
-                        popup('No Exit Found!', exit_color)
+                    if algorithmSelectors.states[algorithms.index('Random Backtracking')]:
+                        if backtracking_solver(maze, maze_start[0], maze_start[1]):
+                            popup('DONE!', start_color)
+                        elif exit_solver:
+                            popup('Solver Stopped!', exit_color)
+                            exit_solver = False
+                        else:
+                            popup('No Exit Found!', exit_color)
+
+                    if algorithmSelectors.states[algorithms.index('Dijkstra')]:
+                        popup('Dijkstra Not Done!', exit_color)
+
+                    if algorithmSelectors.states[algorithms.index('A*')]:
+                        popup('A* Not Done!', exit_color)
 
                     solver_running = False
 
@@ -310,15 +323,26 @@ while True:
             if event.key == pygame.K_r:
                 maze = reset(maze)
 
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # left mouse click
+            if pygame.mouse.get_pressed()[0] == 1:
+                for i in range(len(algorithmSelectors.states)):
+                    if algorithmSelectors.objs[i].collidepoint(pygame.mouse.get_pos()):
+                        for x in range(len(algorithmSelectors.states)):
+                            algorithmSelectors.states[x] = False
+                            algorithmSelectors.colors[x] = not_selected
+
+                        algorithmSelectors.states[i] = True
+                        algorithmSelectors.colors[i] = selected
+
     # screen update
     screen_update(60)
 
 # todo:
-    # move whole thing to Django????? XD  i know but it might be best
-    # selector for Solver algorithm
+    # move global vars to dict = {'val': 0}
     # add other path finding methods
-        # A*
         # dijkstra's algorithm
+        # A*
 
 
 #  next project: https://www.youtube.com/watch?v=Wo5dMEP_BbI
