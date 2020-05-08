@@ -27,7 +27,6 @@ class cell:
                                self.size[0], self.size[1])
 
     def update(self):
-        global maze_start, maze_start_exist
         if solver_running == False:
             if self.obj.collidepoint(pygame.mouse.get_pos()):
                 # left mouse click
@@ -36,17 +35,17 @@ class cell:
                     if (pygame.key.get_pressed()[pygame.K_RSHIFT] == 1
                     or pygame.key.get_pressed()[pygame.K_LSHIFT] == 1):
                         # start (can only have 1)
-                        if maze[maze_start[0]][maze_start[1]].state == 2:
-                            maze[maze_start[0]][maze_start[1]].state = 1
-                            maze[maze_start[0]][maze_start[1]].color = valid_path_color
+                        if maze[mazeGlobals['maze_start'][0]][mazeGlobals['maze_start'][1]].state == 2:
+                            maze[mazeGlobals['maze_start'][0]][mazeGlobals['maze_start'][1]].state = 1
+                            maze[mazeGlobals['maze_start'][0]][mazeGlobals['maze_start'][1]].color = valid_path_color
                         self.state = 2
                         self.color = start_color
-                        maze_start = (np.where(np.isin(maze, self))[0][0],
+                        mazeGlobals['maze_start'] = (np.where(np.isin(maze, self))[0][0],
                                       np.where(np.isin(maze, self))[1][0])
-                        maze_start_exist = True
+                        mazeGlobals['maze_start_exist'] = True
                     else:
                         if self.state == 2:
-                            maze_start_exist = False
+                            mazeGlobals['maze_start_exist'] = False
                         # wall
                         self.state = 0
                         self.color = wall_color
@@ -54,7 +53,7 @@ class cell:
                 # right mouse click
                 if pygame.mouse.get_pressed()[2] == 1:
                     if self.state == 2:
-                        maze_start_exist = False
+                        mazeGlobals['maze_start_exist'] = False
                     # shift + right mouse click
                     if (pygame.key.get_pressed()[pygame.K_RSHIFT] == 1
                     or pygame.key.get_pressed()[pygame.K_LSHIFT] == 1):
@@ -87,13 +86,12 @@ class selectors:
             self.colors.append(not_selected)
 
     def update(self):
-        if solver_running == False:
-            for i in range(len(self.labels)):
-                pygame.draw.rect(screen, self.colors[i], self.objs[i])
-                screen.blit(self.labels[i],
-                           (self.x + self.w // 2 - self.labels[i].get_rect().width // 2,
-                           (self.y + i*(self.h + self.margin)
-                            + self.h // 2) - self.labels[i].get_rect().height // 2))
+        for i in range(len(self.labels)):
+            pygame.draw.rect(screen, self.colors[i], self.objs[i])
+            screen.blit(self.labels[i],
+                       (self.x + self.w // 2 - self.labels[i].get_rect().width // 2,
+                       (self.y + i*(self.h + self.margin)
+                        + self.h // 2) - self.labels[i].get_rect().height // 2))
 
 
 # ------------
@@ -132,14 +130,13 @@ def popup(msg, bg_color):
     text = font.render(msg, True, text_color)
     popup = pygame.Rect(screen_w // 2 - 75, screen_h // 2 + 50, 150, 50)
     pygame.draw.rect(screen, bg_color, popup)
-    screen.blit(text, (screen_w // 2 - text.get_rect().width // 2, screen_h // 2 + 62))
+    screen.blit(text, (screen_w // 2 - text.get_rect().width // 2,
+                       screen_h // 2 + 62))
     pygame.display.flip()
     pygame.time.wait(1500)
 
 def backtracking_solver(maze, row, col):
-    global exit_solver
-
-    # need to handle events to not freeze/crash during recusion
+    # need to handle events during recusion to not freeze/crash pygame
     # also added ability to stop solver
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -147,7 +144,7 @@ def backtracking_solver(maze, row, col):
             sys.exit()
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                exit_solver = True
+                mazeGlobals['exit_solver'] = True
                 return False
 
     # at maze exit?
@@ -171,11 +168,12 @@ def backtracking_solver(maze, row, col):
         screen_update(30)
 
         # all 8 possible moves randomized each call
-        dir = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]]
+        dir = [[0, 1], [0, -1], [1, 0], [-1, 0],
+               [1, 1], [1, -1], [-1, 1], [-1, -1]]
         rand.shuffle(dir)
 
         for i in range(len(dir)):
-            if exit_solver:
+            if mazeGlobals['exit_solver']:
                 return False
             if backtracking_solver(maze, row + dir[i][0], col + dir[i][1]):
                 return True
@@ -193,10 +191,19 @@ def backtracking_solver(maze, row, col):
 
     return False
 
+def dijkstra(maze):
+    pass
+
+def AStar(maze):
+    pass
+
 
 # -----------------------
 # init variables
 # -----------------------
+mazeGlobals = {'exit_solver': False,
+               'maze_start_exist': True,
+               'maze_start': (0, 14)}
 maze_size = 30
 # need to change starting_maze if maze_size is changed (maze_size = 30 when made)
 starting_maze = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -230,8 +237,6 @@ starting_maze = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0,
                  [1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1],
                  [1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 3, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
 # need to change maze_start to match start of starting_maze
-maze_start = (0, 14)
-maze_start_exist = True
 cell_size = (20, 20)
 cell_margin = 2
 valid_path_color = (200, 200, 200)
@@ -247,7 +252,6 @@ screen_w = maze_bg_w + 2 * maze_bg_padding
 screen_h = maze_bg_h + 2 * maze_bg_padding + top_padding
 screen_bg_color = (0, 0, 0)
 solver_running = False
-exit_solver = False
 font_size = 20
 text_color = (220, 220, 220)
 not_selected = (190, 190, 190)
@@ -298,14 +302,16 @@ while True:
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                if maze_start_exist:
+                if mazeGlobals['maze_start_exist']:
                     solver_running = True
                     if algorithmSelectors.states[algorithms.index('Random Backtracking')]:
-                        if backtracking_solver(maze, maze_start[0], maze_start[1]):
+                        if (backtracking_solver(maze,
+                                                mazeGlobals['maze_start'][0],
+                                                mazeGlobals['maze_start'][1])):
                             popup('DONE!', start_color)
-                        elif exit_solver:
+                        elif mazeGlobals['exit_solver']:
                             popup('Solver Stopped!', exit_color)
-                            exit_solver = False
+                            mazeGlobals['exit_solver'] = False
                         else:
                             popup('No Exit Found!', exit_color)
 
@@ -335,11 +341,9 @@ while True:
                         algorithmSelectors.states[i] = True
                         algorithmSelectors.colors[i] = selected
 
-    # screen update
     screen_update(60)
 
 # todo:
-    # move global vars to dict = {'val': 0}
     # add other path finding methods
         # dijkstra's algorithm
         # A*
