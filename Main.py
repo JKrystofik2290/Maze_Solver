@@ -106,6 +106,7 @@ def screen_update(t):
     screen.blit(instructions_exit, (maze_bg_padding, 93))
     screen.blit(instructions_run, (maze_bg_padding, 115))
     screen.blit(instructions_reset, (maze_bg_padding, 137))
+    screen.blit(instructions_clear, (maze_bg_padding, 159))
     algorithmSelectors.update()
     pygame.draw.rect(screen, maze_bg_color, maze_bg)
     for row in maze:
@@ -122,6 +123,18 @@ def reset(new_maze):
             if cell.state == 3:
                 cell.color = exit_color
             elif cell.state == 1:
+                cell.color = valid_path_color
+
+    return new_maze
+
+def clear(new_maze):
+    for row in new_maze:
+        for cell in row:
+            if cell.state == 3:
+                cell.color = exit_color
+            elif cell.state != 2:
+                cell.visited = 0
+                cell.state = 1
                 cell.color = valid_path_color
 
     return new_maze
@@ -184,7 +197,7 @@ def backtracking_solver(maze, row, col):
         # flash red to show backtracking
         maze[row][col].color = exit_color
         screen_update(20)
-        # then retrun to valid_path_color
+        # then return to valid_path_color
         maze[row][col].color = valid_path_color
         screen_update(30)
         return False
@@ -196,10 +209,10 @@ def breadthFirst(maze):
     path = []
     cell = getPathCell(maze, path)
 
-    while checkCell(maze, cell) != 'exit':
+    while True:
 
-        # need to add return False if no exit is found
-        # if queue empty then no exit????
+        if queue == []:
+            return False
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -216,30 +229,68 @@ def breadthFirst(maze):
         for i in ['UL', 'UR', 'DL', 'DR', 'R', 'L', 'U', 'D']:
             path = path + [i]
             cell = getPathCell(maze, path)
-            print('------------------------')
-            print('queue: ')
-            print(queue)
-            print('path: ')
-            print(path)
-            print(checkCell(maze, cell))
 
-            if checkCell(maze, cell) == 'valid':
+            if checkCell(maze, cell) == 'exit':
+                colorPath(maze, path, start_color)
+                return True
+            elif checkCell(maze, cell) == 'valid':
                 queue.append(path)
                 cell.color = search_color
                 cell.visited = 1
 
-            # screen_update(60)
-            print('new queue: ')
-            print(queue)
-            print('------------------------')
+            path = path[:-1]
 
-            path.pop()
-
-        # queue.pop(0)
-        screen_update(60)
+        screen_update(0)
 
     return True
 
+def colorPath(maze, path, color):
+    # takes path and colors every node in it
+    pos = mazeGlobals['maze_start']
+
+    for i in path:
+
+        screen_update(60)
+
+        if i == 'UL':
+            pos = (pos[0] - 1, pos[1] - 1)
+            maze[pos[0]][pos[1]].color = color
+            continue
+
+        if i == 'UR':
+            pos = (pos[0] - 1, pos[1] + 1)
+            maze[pos[0]][pos[1]].color = color
+            continue
+
+        if i == 'DL':
+            pos = (pos[0] + 1, pos[1] - 1)
+            maze[pos[0]][pos[1]].color = color
+            continue
+
+        if i == 'DR':
+            pos = (pos[0] + 1, pos[1] + 1)
+            maze[pos[0]][pos[1]].color = color
+            continue
+
+        if i == 'R':
+            pos = (pos[0], pos[1] + 1)
+            maze[pos[0]][pos[1]].color = color
+            continue
+
+        if i == 'L':
+            pos = (pos[0], pos[1] - 1)
+            maze[pos[0]][pos[1]].color = color
+            continue
+
+        if i == 'U':
+            pos = (pos[0] - 1, pos[1])
+            maze[pos[0]][pos[1]].color = color
+            continue
+
+        if i == 'D':
+            pos = (pos[0] + 1, pos[1])
+            maze[pos[0]][pos[1]].color = color
+            continue
 
 def getPathCell(maze, path):
     # takes path and returns the corresponding cell
@@ -352,7 +403,7 @@ search_color = (100, 220, 210)
 start_color = (50, 200, 50)
 exit_color = (200, 50, 50)
 wall_color = (0, 0, 0)
-top_padding = 150
+top_padding = 160
 maze_bg_padding = 25
 maze_bg_w = maze_size * (cell_size[0] + cell_margin) + cell_margin
 maze_bg_h = maze_size * (cell_size[1] + cell_margin) + cell_margin
@@ -375,13 +426,14 @@ clock = pygame.time.Clock()
 pygame.display.set_caption("Maze Solver")
 screen = pygame.display.set_mode((screen_w, screen_h))
 font = pygame.font.SysFont("arial", font_size, True)
-instructions_header = font.render("Instructions:", True, text_color)
+instructions_header = font.render("Instructions:", True, (220, 220, 10))
 instructions_wall = font.render("Left Mouse Click = Maze Wall", True, text_color)
 instructions_path = font.render("Right Mouse Click = Maze Path", True, text_color)
 instructions_start = font.render("Shift + Left Mouse Click = Maze Start (Only 1)", True, text_color)
 instructions_exit = font.render("Shift + Right Mouse Click = Maze Exit (Any #)", True, text_color)
 instructions_run = font.render("Space = Start/Stop Maze Solver", True, text_color)
 instructions_reset = font.render("R = Reset Maze", True, text_color)
+instructions_clear = font.render("C = Clear Maze", True, text_color)
 maze_bg = pygame.Rect(maze_bg_padding,
                       maze_bg_padding + top_padding,
                       maze_bg_w, maze_bg_h)
@@ -410,9 +462,12 @@ while True:
             sys.exit()
 
         if event.type == pygame.KEYDOWN:
+
             if event.key == pygame.K_SPACE:
+
                 if mazeGlobals['maze_start_exist']:
                     solver_running = True
+
                     if algorithmSelectors.states[algorithms.index('Random Backtracking')]:
                         if (backtracking_solver(maze,
                                                 mazeGlobals['maze_start'][0],
@@ -444,6 +499,9 @@ while True:
             if event.key == pygame.K_r:
                 maze = reset(maze)
 
+            if event.key == pygame.K_c:
+                maze = clear(maze)
+
         if event.type == pygame.MOUSEBUTTONDOWN:
             # left mouse click
             if pygame.mouse.get_pressed()[0] == 1:
@@ -460,12 +518,11 @@ while True:
 
 
 # todo:
-    # when done update README.txt on github
     # move event handler to function
-    # Breadth First
-        # import queue
-            # can do .put() and .get()
     # A*
-
-
-#  next project: https://www.youtube.com/watch?v=Wo5dMEP_BbI
+    # when done update README.txt on github (DOCUMENT WELL!!!!)
+        # explain everything as if actual project but dont give excuses
+        # Breadth First prioritizes diagonals....explaing why
+            # explaing how it works
+        # random backtracking explaing how it works
+        # rehash any notes in code in readme
