@@ -11,7 +11,7 @@ class cell:
     def __init__(self, x_offset, y_offset, x, y, size, margin, state):
         self.size = size
         self.margin = margin
-        self.solution = 0
+        self.visited = 0
         self.state = state
         if state == 0:
             self.color = wall_color
@@ -118,7 +118,7 @@ def screen_update(t):
 def reset(new_maze):
     for row in new_maze:
         for cell in row:
-            cell.solution = 0
+            cell.visited = 0
             if cell.state == 3:
                 cell.color = exit_color
             elif cell.state == 1:
@@ -152,7 +152,7 @@ def backtracking_solver(maze, row, col):
     and col >= 0 and col < maze_size
     and maze[row][col].state == 3):
 
-        maze[row][col].solution = 1
+        maze[row][col].visited = 1
         maze[row][col].color = start_color
         screen_update(30)
         return True
@@ -161,9 +161,9 @@ def backtracking_solver(maze, row, col):
     if (row >= 0 and row < maze_size
     and col >= 0 and col < maze_size
     and maze[row][col].state > 0
-    and maze[row][col].solution == 0):
+    and maze[row][col].visited == 0):
 
-        maze[row][col].solution = 1
+        maze[row][col].visited = 1
         maze[row][col].color = start_color
         screen_update(30)
 
@@ -179,7 +179,7 @@ def backtracking_solver(maze, row, col):
                 return True
 
         # set current spot to not valid & been visited
-        maze[row][col].solution = 10
+        maze[row][col].visited = 10
 
         # flash red to show backtracking
         maze[row][col].color = exit_color
@@ -191,8 +191,116 @@ def backtracking_solver(maze, row, col):
 
     return False
 
-def dijkstra(maze):
-    pass
+def breadthFirst(maze):
+    queue = [[]]
+    path = []
+    cell = getPathCell(maze, path)
+
+    while checkCell(maze, cell) != 'exit':
+
+        # need to add return False if no exit is found
+        # if queue empty then no exit????
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    mazeGlobals['exit_solver'] = True
+                    return False
+
+        path = queue[0]
+        queue.pop(0)
+
+        for i in ['UL', 'UR', 'DL', 'DR', 'R', 'L', 'U', 'D']:
+            path = path + [i]
+            cell = getPathCell(maze, path)
+            print('------------------------')
+            print('queue: ')
+            print(queue)
+            print('path: ')
+            print(path)
+            print(checkCell(maze, cell))
+
+            if checkCell(maze, cell) == 'valid':
+                queue.append(path)
+                cell.color = search_color
+                cell.visited = 1
+
+            # screen_update(60)
+            print('new queue: ')
+            print(queue)
+            print('------------------------')
+
+            path.pop()
+
+        # queue.pop(0)
+        screen_update(60)
+
+    return True
+
+
+def getPathCell(maze, path):
+    # takes path and returns the corresponding cell
+    pos = mazeGlobals['maze_start']
+
+    for i in path:
+        if i == 'UL':
+            pos = (pos[0] - 1, pos[1] - 1)
+            continue
+
+        if i == 'UR':
+            pos = (pos[0] - 1, pos[1] + 1)
+            continue
+
+        if i == 'DL':
+            pos = (pos[0] + 1, pos[1] - 1)
+            continue
+
+        if i == 'DR':
+            pos = (pos[0] + 1, pos[1] + 1)
+            continue
+
+        if i == 'R':
+            pos = (pos[0], pos[1] + 1)
+            continue
+
+        if i == 'L':
+            pos = (pos[0], pos[1] - 1)
+            continue
+
+        if i == 'U':
+            pos = (pos[0] - 1, pos[1])
+            continue
+
+        if i == 'D':
+            pos = (pos[0] + 1, pos[1])
+            continue
+
+    if (pos[0] >= 0 and pos[0] < maze_size
+    and pos[1] >= 0 and pos[1] < maze_size):
+        return maze[pos[0]][pos[1]]
+    else:
+        return False
+
+def checkCell(maze, cell):
+    # checks cell and returns one of the following
+    # 'exit', 'valid', 'notValid', 'visited'
+    if not cell:
+        return 'notValid'
+
+    if cell.visited == 0:
+        if cell.state == 1:
+            return 'valid'
+        elif cell.state == 2:
+            return 'start'
+        elif cell.state == 3:
+            return 'exit'
+        else:
+            return 'notValid'
+    else:
+        return 'visited'
 
 def AStar(maze):
     pass
@@ -240,6 +348,7 @@ starting_maze = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0,
 cell_size = (20, 20)
 cell_margin = 2
 valid_path_color = (200, 200, 200)
+search_color = (100, 220, 210)
 start_color = (50, 200, 50)
 exit_color = (200, 50, 50)
 wall_color = (0, 0, 0)
@@ -283,7 +392,7 @@ maze = [[cell(maze_bg_padding + cell_margin,
           for y in range(maze_size)]
 # algorithms needs to be updated when adding a new algorithm
 # and must correlate index of algorithm name to event call in main loop
-algorithms = ['A*', 'Dijkstra', 'Random Backtracking']
+algorithms = ['A*', 'Breadth First', 'Random Backtracking']
 algorithmSelectors = selectors(algorithms, screen_w - 225, 5, 200, 45, 5)
 # init default selection
 algorithmSelectors.states[2] = True
@@ -315,8 +424,14 @@ while True:
                         else:
                             popup('No Exit Found!', exit_color)
 
-                    if algorithmSelectors.states[algorithms.index('Dijkstra')]:
-                        popup('Dijkstra Not Done!', exit_color)
+                    if algorithmSelectors.states[algorithms.index('Breadth First')]:
+                        if breadthFirst(maze):
+                            popup('DONE!', start_color)
+                        elif mazeGlobals['exit_solver']:
+                            popup('Solver Stopped!', exit_color)
+                            mazeGlobals['exit_solver'] = False
+                        else:
+                            popup('No Exit Found!', exit_color)
 
                     if algorithmSelectors.states[algorithms.index('A*')]:
                         popup('A* Not Done!', exit_color)
@@ -343,10 +458,14 @@ while True:
 
     screen_update(60)
 
+
 # todo:
-    # add other path finding methods
-        # dijkstra's algorithm
-        # A*
+    # when done update README.txt on github
+    # move event handler to function
+    # Breadth First
+        # import queue
+            # can do .put() and .get()
+    # A*
 
 
 #  next project: https://www.youtube.com/watch?v=Wo5dMEP_BbI
