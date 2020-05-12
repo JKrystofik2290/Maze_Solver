@@ -526,6 +526,7 @@ while True:
 
 # todo:
     # move event handler to function
+    # practice making branches and pull request ect....
     # update to follow PEP8 (or greater) standards
     # create self imposed git standard (lookup some?)
         # crown example: https://crown-confluence.crownlift.net/display/IMMV2/Bitbucket+Guidelines
@@ -545,9 +546,8 @@ while True:
         # improve code comments/add
 
 
-
+# https://www.youtube.com/watch?v=umvhVljqWeY
 # https://www.youtube.com/watch?v=oHBFD8cfXho
 # https://www.youtube.com/watch?v=XEhZFtq0xTk
 # https://www.youtube.com/watch?v=II7UCUbxOus
 # https://www.youtube.com/watch?v=Pb9UNhfy1U4
-#
