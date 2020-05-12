@@ -240,7 +240,7 @@ def breadthFirst(maze):
 
             path = path[:-1]
 
-        screen_update(0)
+        screen_update(120)
 
     return True
 
@@ -291,6 +291,8 @@ def colorPath(maze, path, color):
             pos = (pos[0] + 1, pos[1])
             maze[pos[0]][pos[1]].color = color
             continue
+
+    screen_update(60)
 
 def getPathCell(maze, path):
     # takes path and returns the corresponding cell
@@ -399,7 +401,7 @@ starting_maze = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0,
 cell_size = (20, 20)
 cell_margin = 2
 valid_path_color = (200, 200, 200)
-search_color = (100, 220, 210)
+search_color = (100, 220, 255)
 start_color = (50, 200, 50)
 exit_color = (200, 50, 50)
 wall_color = (0, 0, 0)
