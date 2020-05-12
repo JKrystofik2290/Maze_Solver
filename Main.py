@@ -41,7 +41,7 @@ class cell:
                         self.state = 2
                         self.color = start_color
                         mazeGlobals['maze_start'] = (np.where(np.isin(maze, self))[0][0],
-                                      np.where(np.isin(maze, self))[1][0])
+                                                     np.where(np.isin(maze, self))[1][0])
                         mazeGlobals['maze_start_exist'] = True
                     else:
                         if self.state == 2:
@@ -90,8 +90,8 @@ class selectors:
             pygame.draw.rect(screen, self.colors[i], self.objs[i])
             screen.blit(self.labels[i],
                        (self.x + self.w // 2 - self.labels[i].get_rect().width // 2,
-                       (self.y + i*(self.h + self.margin)
-                        + self.h // 2) - self.labels[i].get_rect().height // 2))
+                       (self.y + i*(self.h + self.margin) + self.h // 2)
+                        - self.labels[i].get_rect().height // 2))
 
 
 # ------------
@@ -211,6 +211,7 @@ def breadthFirst(maze):
 
     while True:
 
+        # if queue empty no exit found
         if queue == []:
             return False
 
@@ -223,10 +224,12 @@ def breadthFirst(maze):
                     mazeGlobals['exit_solver'] = True
                     return False
 
+        # Dequeue
         path = queue[0]
         queue.pop(0)
 
         for i in ['UL', 'UR', 'DL', 'DR', 'R', 'L', 'U', 'D']:
+            # add to path next direction i
             path = path + [i]
             cell = getPathCell(maze, path)
 
@@ -234,10 +237,12 @@ def breadthFirst(maze):
                 colorPath(maze, path, start_color)
                 return True
             elif checkCell(maze, cell) == 'valid':
+                # Enqueue
                 queue.append(path)
                 cell.color = search_color
                 cell.visited = 1
 
+            # remove i from end of path to prep for next iteration i
             path = path[:-1]
 
         screen_update(120)
@@ -521,10 +526,28 @@ while True:
 
 # todo:
     # move event handler to function
+    # update to follow PEP8 (or greater) standards
+    # create self imposed git standard (lookup some?)
+        # crown example: https://crown-confluence.crownlift.net/display/IMMV2/Bitbucket+Guidelines
+    # make to Crown python standards
+        # https://crown-confluence.crownlift.net/display/IMMV2/Python+Guidelines
     # A*
     # when done update README.txt on github (DOCUMENT WELL!!!!)
         # explain everything as if actual project but dont give excuses
         # Breadth First prioritizes diagonals....explaing why
+            # IMPROVMENTS/LOOKING BACK????
             # explaing how it works
+            # very in-efficiant especially with larger data sets
+            # https://techwithtim.net/tutorials/breadth-first-search/
         # random backtracking explaing how it works
+            # essentially depth search First(double check this??)
         # rehash any notes in code in readme
+        # improve code comments/add
+
+
+
+# https://www.youtube.com/watch?v=oHBFD8cfXho
+# https://www.youtube.com/watch?v=XEhZFtq0xTk
+# https://www.youtube.com/watch?v=II7UCUbxOus
+# https://www.youtube.com/watch?v=Pb9UNhfy1U4
+#
