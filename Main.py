@@ -3,6 +3,8 @@ import pygame
 import numpy as np
 import random as rand
 
+# cleaning up code to google style standards
+
 
 # ------------
 #   classes
