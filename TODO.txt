@@ -1,6 +1,9 @@
-# run pylint
+# run pylint, pytype, yapf (save before doing these!!!!)
 # get an online review of code
+# move maze generation to function with yeild
+# If i would have to explaing in code review add comment
 # add error handeling
+# make test
 # A*
 # Update README.txt on github (DOCUMENT WELL!!!!)
     # follow google python syle guide
@@ -11,3 +14,9 @@
         # very in-efficiant especially with larger data sets
         # https://techwithtim.net/tutorials/breadth-first-search/
     # rehash any notes in code in readme
+
+
+
+
+
+# https://github.com/google
