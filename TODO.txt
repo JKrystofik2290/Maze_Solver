@@ -3,7 +3,7 @@
 # add error handeling
 # If I would have to explain in code review add comment
 # run pylint, pytype, yapf (save before doing these!!!!)
-# make test
+# make test and run pytest
 # get an online review of code
     # https://codereview.stackexchange.com/
     # document results and changes from review
