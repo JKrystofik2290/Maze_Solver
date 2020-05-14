@@ -1,0 +1,13 @@
+# run pylint
+# get an online review of code
+# add error handeling
+# A*
+# Update README.txt on github (DOCUMENT WELL!!!!)
+    # follow google python syle guide
+        # http://google.github.io/styleguide/pyguide.html
+    # Breadth First prioritizes diagonals....explaing why
+        # IMPROVMENTS/LOOKING BACK????
+        # explaing how it works
+        # very in-efficiant especially with larger data sets
+        # https://techwithtim.net/tutorials/breadth-first-search/
+    # rehash any notes in code in readme
