@@ -10,13 +10,15 @@ import sys
 import pygame
 import numpy as np
 import random as rand
-from typing import Optional, List, Tuple, Any
+from typing import Optional, List, Tuple, Any, Iterator
 
 
 # ------------
 #  Type Alias
 # ------------
-MazeType = List[List["Cell"]] # "Cell" refers to the Cell class below
+MazeType = List[List["Cell"]] # "Cell" refers to a Cell class object
+MazeRowType = List["Cell"]
+DefaultMaze = List[List[int]]
 ColorType = Tuple[int, int, int]
 
 
@@ -221,6 +223,28 @@ def critical_event_handler() -> bool:
             return True
 
     return False
+
+
+def maze_maker(size: int, default_maze: DefaultMaze) -> Iterator[MazeRowType]:
+    """Makes a maze row by row.
+
+    Could have returned whole maze but since this program is a portfolio
+    project I wanted practice with yield.
+
+    Args:
+        size: Sets the number of rows and Cells per row.
+        default_maze: Gives each Cell its starting state.
+
+    Yields:
+        Each row of the maze
+    """
+    for y in range(size):
+        maze_row = []
+        for x in range(size):
+            maze_row.append(Cell(CELL_OFFSET_X, CELL_OFFSET_Y, x, y, CELL_SIZE,
+                                 CELL_MARGIN, default_maze[y][x]))
+
+        yield maze_row
 
 
 def screen_update(fps: int) -> None:
@@ -720,17 +744,7 @@ STARTING_MAZE = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0,
 # ------------
 maze_start = Mem((0, 14))
 solver_running = Mem(False)
-maze = []
-temp = []
-# Generation of maze to MAZE_SIZE by MAZE_SIZE and populate with
-# Cell class objects.
-for row in range(MAZE_SIZE):
-    for col in range(MAZE_SIZE):
-        temp.append(Cell(CELL_OFFSET_X, CELL_OFFSET_Y, col, row, CELL_SIZE,
-                         CELL_MARGIN, STARTING_MAZE[row][col]))
-    maze.append(temp)
-    temp = []
-del temp # Done using temp.
+maze = [row for row in maze_maker(MAZE_SIZE, STARTING_MAZE)]
 
 
 # ------------
