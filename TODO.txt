@@ -1,10 +1,12 @@
-# run pylint, pytype, yapf (save before doing these!!!!)
-# get an online review of code
 # move maze generation to function with yeild
-# If i would have to explaing in code review add comment
-# add error handeling
-# make test
 # A*
+# add error handeling
+# If I would have to explain in code review add comment
+# run pylint, pytype, yapf (save before doing these!!!!)
+# make test
+# get an online review of code
+    # https://codereview.stackexchange.com/
+    # document results and changes from review
 # Update README.txt on github (DOCUMENT WELL!!!!)
     # follow google python syle guide
         # http://google.github.io/styleguide/pyguide.html
