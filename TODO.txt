@@ -1,3 +1,5 @@
+# Tets A* more
+# Make new starter maze
 # add error handeling
 # If I would have to explain in code review add comment
 # run pylint, pytype, yapf (save before doing these!!!!)

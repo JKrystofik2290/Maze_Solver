@@ -8,6 +8,7 @@ http://google.github.io/styleguide/pyguide.html
 """
 import sys
 import pygame
+import math
 import random as rand
 from typing import Optional, List, Tuple, Any, Iterator
 
@@ -314,6 +315,10 @@ def reset(reset_maze: MazeType) -> MazeType:
     for row in reset_maze:
         for cell in row:
             cell.visited = 0
+            cell.g = 0
+            cell.h = 0
+            cell.f = 0
+            cell.parent = None
 
             if cell.state == 3:
                 cell.color = EXIT_COLOR
@@ -335,6 +340,11 @@ def clear(new_maze: MazeType) -> MazeType:
     """
     for row in new_maze:
         for cell in row:
+
+            cell.g = 0
+            cell.h = 0
+            cell.f = 0
+            cell.parent = None
 
             if cell.state == 3:
                 cell.color = EXIT_COLOR
@@ -619,9 +629,9 @@ def breadth_first(maze: MazeType) -> bool:
 def a_star(maze: MazeType) -> bool:
     """Uses A* algorithm to find the exit to maze.
 
-    This algorithm is allowed to move diagonal thus it prioritizes moving
-    diagonal since in any square grid style maze moving diagonal will always be
-    faster then not doing so.
+    This algorithm is allowed to move diagonal. Do not use closed list that
+    is typically used with A* becasue cell visited status is already tracked
+    which removes the need for closed list.
 
     Args:
         maze: 2D list of Cell class objects.
@@ -630,10 +640,10 @@ def a_star(maze: MazeType) -> bool:
         Once it finds the exit, returns True, otherwise if all valid Cells
         have been visited, returns False.
     """
-    open_list = [maze[maze_start.val[0]][maze_start.val[1]]]
-    closed_list = []
-    possible_child = [[1, 1], [1, -1], [-1, 1], [-1, -1],
-                      [0, 1], [0, -1], [1, 0], [-1, 0]]
+    start_cell = maze[maze_start.val[0]][maze_start.val[1]]
+    open_list = [start_cell]
+    possible_child = [[0, 1], [0, -1], [1, 0], [-1, 0],
+                      [1, 1], [1, -1], [-1, 1], [-1, -1]]
 
     while open_list != []:
 
@@ -641,15 +651,12 @@ def a_star(maze: MazeType) -> bool:
             return False
 
         open_list.sort(key=lambda cell: cell.f)
-        current_cell = open_list[0]
-        open_list.pop(0)
-        closed_list.append(current_cell)
+        current_cell = open_list.pop(0)
 
         if current_cell.state == 3:
 
-            start_cell = maze[maze_start.val[0]][maze_start.val[1]]
-
-            while current_cell != start_cell:
+            while current_cell.state != 2:
+                critical_event_handler()
                 current_cell.color = START_COLOR
                 screen_update(60)
                 current_cell = current_cell.parent
@@ -658,37 +665,33 @@ def a_star(maze: MazeType) -> bool:
 
         children = []
 
-        for child in possible_child:
+        for next in possible_child:
 
-            row = current_cell.row + child[0]
-            col = current_cell.col + child[1]
+            row = current_cell.row + next[0]
+            col = current_cell.col + next[1]
 
             if (row >= 0 and row < MAZE_SIZE and col >= 0 and col < MAZE_SIZE
-            and maze[row][col].visited == 0 and maze[row][col].state > 0):
+            and maze[row][col].state != 0 and maze[row][col].visited != 1
+            and maze[row][col] != start_cell):
 
                 children.append(maze[row][col])
 
         for child in children:
 
             child.parent = current_cell
-
-            if child in closed_list:
-                continue
-
             child.color = SEARCH_COLOR
-            child.visited = 1 # test ingoring visited
+            child.visited = 1
+            screen_update(60)
 
             child.g = current_cell.g + 1
-            child.h = ((child.row - maze_exit.val[0]) ** 2 +
-                       (child.col - maze_exit.val[1]) ** 2)
+
+            child.h = math.sqrt((child.row - maze_exit.val[0])**2 +
+                                (child.col - maze_exit.val[1])**2)
+
             child.f = child.g + child.h
 
-            if child in open_list:
-                if child.g > open_list[open_list.index(child)].g:
-                    continue
-
-            open_list.append(child)
-            screen_update(60)
+            if child not in open_list:
+                open_list.append(child)
 
     return False
 
