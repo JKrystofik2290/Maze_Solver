@@ -8,7 +8,6 @@ http://google.github.io/styleguide/pyguide.html
 """
 import sys
 import pygame
-import numpy as np
 import random as rand
 from typing import Optional, List, Tuple, Any, Iterator
 
@@ -63,12 +62,15 @@ class Cell(object):
 
     Attributes:
         size: Tuple containing width and height of the cell.
+        row: Row location of cell in maze.
+        col: Column location of cell in maze.
         margin: Spacing to have between cells.
         visited: Value indicating if a cell has been previously checked by a
             pathfinding algorithm.
         f: Total cost of cell. (used in A*)
         g: Number of cells away from start cell. (used in A*)
         h: Straight line distance to maze exit. (used in A*)
+        parent: Used in A* to get shotest path.
         state: Used to determine if a cell is a wall, valid path, the exit,
             or the start of the maze.
         color: The color to fill the cell with. This should be tied to the
@@ -79,11 +81,14 @@ class Cell(object):
                  size: Tuple[int, int], margin: int, state: int) -> None:
         """Inits Cell with values need to create Cell objects."""
         self.size = size
+        self.row = y
+        self.col = x
         self.margin = margin
         self.visited = 0
         self.f = 0
         self.g = 0
         self.h = 0
+        self.parent = None
         self.state = state
         if state == 0:
             self.color = WALL_COLOR
@@ -129,8 +134,7 @@ class Cell(object):
 
                         self.state = 2
                         self.color = START_COLOR
-                        maze_start.val = (np.where(np.isin(maze, self))[0][0],
-                                          np.where(np.isin(maze, self))[1][0])
+                        maze_start.val = (self.row, self.col)
 
                     else:
 
@@ -159,8 +163,7 @@ class Cell(object):
 
                         self.state = 3
                         self.color = EXIT_COLOR
-                        maze_exit.val = (np.where(np.isin(maze, self))[0][0],
-                                         np.where(np.isin(maze, self))[1][0])
+                        maze_exit.val = (self.row, self.col)
 
                     else:
                         self.state = 1
@@ -627,8 +630,67 @@ def a_star(maze: MazeType) -> bool:
         Once it finds the exit, returns True, otherwise if all valid Cells
         have been visited, returns False.
     """
-    open_list = []
+    open_list = [maze[maze_start.val[0]][maze_start.val[1]]]
     closed_list = []
+    possible_child = [[1, 1], [1, -1], [-1, 1], [-1, -1],
+                      [0, 1], [0, -1], [1, 0], [-1, 0]]
+
+    while open_list != []:
+
+        if critical_event_handler():
+            return False
+
+        open_list.sort(key=lambda cell: cell.f)
+        current_cell = open_list[0]
+        open_list.pop(0)
+        closed_list.append(current_cell)
+
+        if current_cell.state == 3:
+
+            start_cell = maze[maze_start.val[0]][maze_start.val[1]]
+
+            while current_cell != start_cell:
+                current_cell.color = START_COLOR
+                screen_update(60)
+                current_cell = current_cell.parent
+
+            return True
+
+        children = []
+
+        for child in possible_child:
+
+            row = current_cell.row + child[0]
+            col = current_cell.col + child[1]
+
+            if (row >= 0 and row < MAZE_SIZE and col >= 0 and col < MAZE_SIZE
+            and maze[row][col].visited == 0 and maze[row][col].state > 0):
+
+                children.append(maze[row][col])
+
+        for child in children:
+
+            child.parent = current_cell
+
+            if child in closed_list:
+                continue
+
+            child.color = SEARCH_COLOR
+            child.visited = 1 # test ingoring visited
+
+            child.g = current_cell.g + 1
+            child.h = ((child.row - maze_exit.val[0]) ** 2 +
+                       (child.col - maze_exit.val[1]) ** 2)
+            child.f = child.g + child.h
+
+            if child in open_list:
+                if child.g > open_list[open_list.index(child)].g:
+                    continue
+
+            open_list.append(child)
+            screen_update(60)
+
+    return False
 
 
 def main(maze: MazeType) -> None:
@@ -684,7 +746,11 @@ def main(maze: MazeType) -> None:
                     else:
                         # A* is choosen by default though should never be
                         # possible to not have a button selected.
-                        popup('A* Not Done!', EXIT_COLOR)
+                        if a_star(maze):
+                            popup('DONE!', START_COLOR)
+
+                        else:
+                            popup('No Exit Found!', EXIT_COLOR)
 
                     solver_running.val = False
 
