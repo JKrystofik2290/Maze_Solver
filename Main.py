@@ -66,6 +66,9 @@ class Cell(object):
         margin: Spacing to have between cells.
         visited: Value indicating if a cell has been previously checked by a
             pathfinding algorithm.
+        f: Total cost of cell. (used in A*)
+        g: Number of cells away from start cell. (used in A*)
+        h: Straight line distance to maze exit. (used in A*)
         state: Used to determine if a cell is a wall, valid path, the exit,
             or the start of the maze.
         color: The color to fill the cell with. This should be tied to the
@@ -78,6 +81,9 @@ class Cell(object):
         self.size = size
         self.margin = margin
         self.visited = 0
+        self.f = 0
+        self.g = 0
+        self.h = 0
         self.state = state
         if state == 0:
             self.color = WALL_COLOR
@@ -96,8 +102,8 @@ class Cell(object):
         """Handles user inputs and pygame drawing of cells.
 
         Will skip user inputs if a pathfinding algorithm is running. When
-        drawing the maze start, will clear previous maze start since only one
-        is allowed. Any number of exits are allowed.
+        drawing the maze start/exit, will clear previous maze start/exit since
+        only one is allowed of each.
 
         Controls for cells:
             Left mouse click = Draw maze wall
@@ -108,7 +114,9 @@ class Cell(object):
         if not solver_running.val:
 
             if self.obj.collidepoint(pygame.mouse.get_pos()):
+
                 if pygame.mouse.get_pressed()[0] == 1:
+
                     if (pygame.key.get_pressed()[pygame.K_RSHIFT] == 1
                     or pygame.key.get_pressed()[pygame.K_LSHIFT] == 1):
 
@@ -128,6 +136,8 @@ class Cell(object):
 
                         if self.state == 2: maze_start.val = False
 
+                        if self.state == 3: maze_exit.val = False
+
                         self.state = 0
                         self.color = WALL_COLOR
 
@@ -135,11 +145,22 @@ class Cell(object):
 
                     if self.state == 2: maze_start.val = False
 
+                    if self.state == 3: maze_exit.val = False
+
                     if (pygame.key.get_pressed()[pygame.K_RSHIFT] == 1
                     or pygame.key.get_pressed()[pygame.K_LSHIFT] == 1):
 
+                        if maze_exit.val != False:
+                            exit_cell = (maze[maze_exit.val[0]]
+                                             [maze_exit.val[1]])
+
+                            exit_cell.state = 1
+                            exit_cell.color = VALID_PATH_COLOR
+
                         self.state = 3
                         self.color = EXIT_COLOR
+                        maze_exit.val = (np.where(np.isin(maze, self))[0][0],
+                                         np.where(np.isin(maze, self))[1][0])
 
                     else:
                         self.state = 1
@@ -497,8 +518,7 @@ def backtrack_solver(maze: MazeType, row: int, col: int) -> bool:
     passing the randomly selected row and col. Once it reaches a deadend or
     a Cell that has already been visited it backtracks to the previous
     recursive call and and chooses another adjacent Cell randomly but not one
-    it has already chosen. Once it finds the exit returns True elif all valid
-    Cells have been visited returns False.
+    it has already chosen.
 
     Args:
         maze: 2D list of Cell class objects.
@@ -607,7 +627,8 @@ def a_star(maze: MazeType) -> bool:
         Once it finds the exit, returns True, otherwise if all valid Cells
         have been visited, returns False.
     """
-    pass
+    open_list = []
+    closed_list = []
 
 
 def main(maze: MazeType) -> None:
@@ -638,6 +659,9 @@ def main(maze: MazeType) -> None:
 
                     if maze_start.val == False:
                         popup('No Maze Start!', EXIT_COLOR)
+
+                    elif maze_exit.val == False:
+                        popup('No Maze Exit!', EXIT_COLOR)
 
                     elif algo_btn.states[ALGO.index('Random Backtracking')]:
 
@@ -743,6 +767,7 @@ STARTING_MAZE = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0,
 #  Variables
 # ------------
 maze_start = Mem((0, 14))
+maze_exit = Mem((29, 14))
 solver_running = Mem(False)
 maze = [row for row in maze_maker(MAZE_SIZE, STARTING_MAZE)]
 
@@ -760,7 +785,7 @@ instructions_wall = font.render("Left Click = Maze Wall", True, TEXT_COLOR)
 instructions_path = font.render("Right Click = Maze Path", True, TEXT_COLOR)
 instructions_start = font.render("Shift + Left Click = Maze Start (Only 1)",
                                  True, TEXT_COLOR)
-instructions_exit = font.render("Shift + Right Click = Maze Exit (Any #)",
+instructions_exit = font.render("Shift + Right Click = Maze Exit (Only 1)",
                                 True, TEXT_COLOR)
 instructions_run = font.render("Space = Start/Stop Maze Solver",
                                True, TEXT_COLOR)
