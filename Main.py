@@ -630,8 +630,8 @@ def a_star(maze: MazeType) -> bool:
     """Uses A* algorithm to find the exit to maze.
 
     This algorithm is allowed to move diagonal. Do not use closed list that
-    is typically used with A* becasue cell visited status is already tracked
-    which removes the need for closed list.
+    is typically used with A* becasue cell.visited status is already tracked
+    and g only ever increases by 1 which removes the need for closed list.
 
     Args:
         maze: 2D list of Cell class objects.
@@ -652,6 +652,7 @@ def a_star(maze: MazeType) -> bool:
 
         open_list.sort(key=lambda cell: cell.f)
         current_cell = open_list.pop(0)
+        current_cell.visited = 1
 
         if current_cell.state == 3:
 
@@ -690,8 +691,9 @@ def a_star(maze: MazeType) -> bool:
 
             child.f = child.g + child.h
 
-            if child not in open_list:
-                open_list.append(child)
+            # if child not in open_list:
+            #     open_list.append(child)
+            open_list.append(child)
 
     return False
 
