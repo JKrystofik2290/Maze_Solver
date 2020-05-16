@@ -1,4 +1,5 @@
-# run pylint, pytype, yapf (save before doing these!!!!)
+# run pylint, yapf
+    # add noted that these where run
 # make test and run pytest
 # get an online review of code
     # https://codereview.stackexchange.com/
@@ -12,8 +13,6 @@
         # very in-efficiant especially with larger data sets
         # https://techwithtim.net/tutorials/breadth-first-search/
     # rehash any notes in code in readme
-
-
 
 
 

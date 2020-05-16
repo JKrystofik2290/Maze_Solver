@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """Maze solver program visualizing different pathfinding algorithms.
 
 This was a project for my portfolio to show competency using pathfinding
@@ -7,16 +6,16 @@ algorithms. Google's style guide was used throughout this doc, reference:
 http://google.github.io/styleguide/pyguide.html
 """
 import sys
-import pygame
+from typing import Optional, List, Tuple, Any, Iterator
 import math
 import random as rand
-from typing import Optional, List, Tuple, Any, Iterator
+import pygame
 
 
 # ------------
 #  Type Alias
 # ------------
-MazeType = List[List["Cell"]] # "Cell" refers to a Cell class object
+MazeType = List[List["Cell"]]  # "Cell" refers to a Cell class object
 MazeRowType = List["Cell"]
 DefaultMaze = List[List[int]]
 ColorType = Tuple[int, int, int]
@@ -78,6 +77,7 @@ class Cell(object):
             state of the cell.
         obj: Contains the pygame "Rect" object reference for the cell.
     """
+
     def __init__(self, x_offset: int, y_offset: int, x: int, y: int,
                  size: Tuple[int, int], margin: int, state: int) -> None:
         """Inits Cell with values need to create Cell objects."""
@@ -123,12 +123,15 @@ class Cell(object):
 
                 if pygame.mouse.get_pressed()[0] == 1:
 
-                    if (pygame.key.get_pressed()[pygame.K_RSHIFT] == 1
-                    or pygame.key.get_pressed()[pygame.K_LSHIFT] == 1):
+                    if (pygame.key.get_pressed()[pygame.K_RSHIFT] == 1 or
+                            pygame.key.get_pressed()[pygame.K_LSHIFT] == 1):
 
-                        if maze_start.val != False:
-                            start_cell = (maze[maze_start.val[0]]
-                                              [maze_start.val[1]])
+                        if self.state == 3:
+                            maze_exit.val = False
+
+                        if not maze_start.val:
+                            start_cell = (
+                                maze[maze_start.val[0]][maze_start.val[1]])
 
                             start_cell.state = 1
                             start_cell.color = VALID_PATH_COLOR
@@ -139,25 +142,29 @@ class Cell(object):
 
                     else:
 
-                        if self.state == 2: maze_start.val = False
+                        if self.state == 2:
+                            maze_start.val = False
 
-                        if self.state == 3: maze_exit.val = False
+                        if self.state == 3:
+                            maze_exit.val = False
 
                         self.state = 0
                         self.color = WALL_COLOR
 
                 if pygame.mouse.get_pressed()[2] == 1:
 
-                    if self.state == 2: maze_start.val = False
+                    if self.state == 2:
+                        maze_start.val = False
 
-                    if self.state == 3: maze_exit.val = False
+                    if self.state == 3:
+                        maze_exit.val = False
 
-                    if (pygame.key.get_pressed()[pygame.K_RSHIFT] == 1
-                    or pygame.key.get_pressed()[pygame.K_LSHIFT] == 1):
+                    if (pygame.key.get_pressed()[pygame.K_RSHIFT] == 1 or
+                            pygame.key.get_pressed()[pygame.K_LSHIFT] == 1):
 
-                        if maze_exit.val != False:
-                            exit_cell = (maze[maze_exit.val[0]]
-                                             [maze_exit.val[1]])
+                        if not maze_exit.val:
+                            exit_cell = (
+                                maze[maze_exit.val[0]][maze_exit.val[1]])
 
                             exit_cell.state = 1
                             exit_cell.color = VALID_PATH_COLOR
@@ -191,8 +198,9 @@ class Btn(object):
         state: List of bool state of each button.
         colors: List of fill colors of each button.
     """
-    def __init__(self, labels: List[str], x: int, y: int,
-                 w: int, h: int, margin: int) -> None:
+
+    def __init__(self, labels: List[str], x: int, y: int, w: int, h: int,
+                 margin: int) -> None:
         """Inits Btn with the values need to build the button group."""
         self.labels = []
         self.objs = []
@@ -204,12 +212,11 @@ class Btn(object):
         self.h = h
         self.margin = margin
 
-        for i in range(len(labels)):
-            self.labels.append(font.render(labels[i], True, (33, 33, 33)))
-            self.objs.append(pygame.Rect(x, y + (h + margin)*i, w, h))
+        for i in enumerate(labels):
+            self.labels.append(font.render(i[1], True, (33, 33, 33)))
+            self.objs.append(pygame.Rect(x, y + (h + margin) * i[0], w, h))
             self.states.append(False)
             self.colors.append(NOT_SELECTED)
-
 
     def update(self) -> None:
         """Updates the pygame object for each button in the group."""
@@ -217,11 +224,10 @@ class Btn(object):
             font_w = self.labels[i].get_rect().width
             font_h = self.labels[i].get_rect().height
             pygame.draw.rect(screen, self.colors[i], self.objs[i])
-            screen.blit(
-                self.labels[i], (self.x + (self.w - font_w) // 2,
-                (self.y + i*(self.h + self.margin) + self.h // 2) - font_h // 2)
-                )
-
+            screen.blit(self.labels[i],
+                        (self.x + (self.w - font_w) // 2,
+                         (self.y + i *
+                          (self.h + self.margin) + self.h // 2) - font_h // 2))
 
 
 # ------------
@@ -250,6 +256,88 @@ def critical_event_handler() -> bool:
     return False
 
 
+def keyboard_event(maze: MazeType, event: Any) -> MazeType:
+    """Handles keyboard events in pygame.
+
+    Handels following keyboard inputs:
+    R = Resets the maze.
+    C = Clears the maze.
+    Spacebar = Starts the selected pathfinding algorithm.
+
+    Args:
+        maze: 2D list of Cell class objects.
+        event: Pygame event object.
+
+    Returns:
+        Updated maze.
+    """
+
+    if event.key == pygame.K_r:
+        maze = reset(maze)
+
+    if event.key == pygame.K_c:
+        maze = clear(maze)
+
+    if event.key == pygame.K_SPACE:
+        solver_running.val = True
+
+        if not maze_start.val:
+            popup('No Maze Start!', EXIT_COLOR)
+
+        elif not maze_exit.val:
+            popup('No Maze Exit!', EXIT_COLOR)
+
+        elif algo_btn.states[ALGO.index('Random Backtracking')]:
+
+            if backtrack_solver(maze, maze_start.val[0], maze_start.val[1]):
+                popup('DONE!', START_COLOR)
+
+            else:
+                popup('No Exit Found!', EXIT_COLOR)
+
+        elif algo_btn.states[ALGO.index('Breadth First')]:
+
+            if breadth_first(maze):
+                popup('DONE!', START_COLOR)
+
+            else:
+                popup('No Exit Found!', EXIT_COLOR)
+
+        elif a_star(maze):
+            popup('DONE!', START_COLOR)
+
+        else:
+            popup('No Exit Found!', EXIT_COLOR)
+
+        solver_running.val = False
+
+    return maze
+
+
+def mouse_event() -> None:
+    """Handles mouse events in pygame.
+
+    Mainly handels algorithm button selection since maze cell interactions is
+    handled by each class Cell object.
+
+    Args:
+        event: Pygame event object.
+    """
+
+    if pygame.mouse.get_pressed()[0] == 1:
+
+        for i in range(len(algo_btn.states)):
+
+            if algo_btn.objs[i].collidepoint(pygame.mouse.get_pos()):
+
+                for j in range(len(algo_btn.states)):
+                    algo_btn.states[j] = False
+                    algo_btn.colors[j] = NOT_SELECTED
+
+                algo_btn.states[i] = True
+                algo_btn.colors[i] = SELECTED
+
+
 def maze_maker(size: int, default_maze: DefaultMaze) -> Iterator[MazeRowType]:
     """Makes a maze row by row.
 
@@ -263,11 +351,12 @@ def maze_maker(size: int, default_maze: DefaultMaze) -> Iterator[MazeRowType]:
     Yields:
         Each row of the maze
     """
-    for y in range(size):
+    for row in range(size):
         maze_row = []
-        for x in range(size):
-            maze_row.append(Cell(CELL_OFFSET_X, CELL_OFFSET_Y, x, y, CELL_SIZE,
-                                 CELL_MARGIN, default_maze[y][x]))
+        for col in range(size):
+            maze_row.append(
+                Cell(CELL_OFFSET_X, CELL_OFFSET_Y, col, row, CELL_SIZE,
+                     CELL_MARGIN, default_maze[row][col]))
 
         yield maze_row
 
@@ -367,10 +456,10 @@ def popup(msg: str, bg_color: ColorType) -> None:
         bg_color: color of pygame "Rect" object.
     """
     text = font.render(msg, True, TEXT_COLOR)
-    popup = pygame.Rect(SCREEN_W // 2 - 75, SCREEN_H // 2 + 50, 150, 50)
-    pygame.draw.rect(screen, bg_color, popup)
-    screen.blit(text, (SCREEN_W // 2 - text.get_rect().width // 2,
-                       SCREEN_H // 2 + 62))
+    popup_text = pygame.Rect(SCREEN_W // 2 - 75, SCREEN_H // 2 + 50, 150, 50)
+    pygame.draw.rect(screen, bg_color, popup_text)
+    screen.blit(
+        text, (SCREEN_W // 2 - text.get_rect().width // 2, SCREEN_H // 2 + 62))
     pygame.display.flip()
     pygame.time.wait(1250)
 
@@ -484,23 +573,20 @@ def get_path_cell(maze: MazeType, path: List[str]) -> Optional[Cell]:
             pos = (pos[0] + 1, pos[1])
             continue
 
-    if (pos[0] >= 0 and pos[0] < MAZE_SIZE
-    and pos[1] >= 0 and pos[1] < MAZE_SIZE):
+    if 0 <= pos[0] < MAZE_SIZE and 0 <= pos[1] < MAZE_SIZE:
 
         return maze[pos[0]][pos[1]]
 
-    else:
-        return None
+    return None
 
 
-def check_cell(maze: MazeType, cell: Optional[Cell]) -> str:
+def check_cell(cell: Optional[Cell]) -> str:
     """Checks the Cell class object passed to it.
 
     First checks if a Cell object was passed to it then checks its visited
     value and state value.
 
     Args:
-        maze: 2D list of Cell class objects.
         cell: Cell class object.
 
     Returns:
@@ -512,14 +598,16 @@ def check_cell(maze: MazeType, cell: Optional[Cell]) -> str:
     if cell.visited == 0:
         if cell.state == 1:
             return 'valid'
-        elif cell.state == 2:
+
+        if cell.state == 2:
             return 'start'
-        elif cell.state == 3:
+
+        if cell.state == 3:
             return 'exit'
-        else:
-            return 'notValid'
-    else:
-        return 'visited'
+
+        return 'notValid'
+
+    return 'visited'
 
 
 def backtrack_solver(maze: MazeType, row: int, col: int) -> bool:
@@ -546,8 +634,8 @@ def backtrack_solver(maze: MazeType, row: int, col: int) -> bool:
         solver_running.val = False
         return False
 
-    if (row >= 0 and row < MAZE_SIZE and col >= 0 and col < MAZE_SIZE
-    and maze[row][col].visited == 0 and maze[row][col].state > 0):
+    if (0 <= row < MAZE_SIZE and 0 <= col < MAZE_SIZE and
+            maze[row][col].visited == 0 and maze[row][col].state > 0):
 
         maze[row][col].visited = 1
         maze[row][col].color = START_COLOR
@@ -556,26 +644,25 @@ def backtrack_solver(maze: MazeType, row: int, col: int) -> bool:
         if maze[row][col].state == 3:
             return True
 
-        else:
+        adj = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1], [-1, 1],
+               [-1, -1]]
 
-            DIR = [[0, 1], [0, -1], [1, 0], [-1, 0],
-                   [1, 1], [1, -1], [-1, 1], [-1, -1]]
+        rand.shuffle(adj)
 
-            rand.shuffle(DIR)
+        for i in enumerate(adj):
+            if backtrack_solver(maze, row + i[1][0], col + i[1][1]):
 
-            for i in range(len(DIR)):
-                if backtrack_solver(maze, row + DIR[i][0], col + DIR[i][1]):
-                    return True
+                return True
 
-                if not solver_running.val:
-                    return False
+            if not solver_running.val:
+                return False
 
-            maze[row][col].color = EXIT_COLOR
-            screen_update(20) # Flash red to show backtracking.
-            maze[row][col].color = VALID_PATH_COLOR
-            screen_update(30) # Then return to VALID_PATH_COLOR.
+        maze[row][col].color = EXIT_COLOR
+        screen_update(20)  # Flash red to show backtracking.
+        maze[row][col].color = VALID_PATH_COLOR
+        screen_update(30)  # Then return to VALID_PATH_COLOR.
 
-            return False
+        return False
 
     return False
 
@@ -604,18 +691,18 @@ def breadth_first(maze: MazeType) -> bool:
             return False
 
         path = queue[0]
-        queue.pop(0) # Dequeue
+        queue.pop(0)  # Dequeue
 
         for i in ['UL', 'UR', 'DL', 'DR', 'R', 'L', 'U', 'D']:
             path = path + [i]
             cell = get_path_cell(maze, path)
 
-            if check_cell(maze, cell) == 'exit':
+            if check_cell(cell) == 'exit':
                 color_path(maze, path, START_COLOR)
                 return True
 
-            elif check_cell(maze, cell) == 'valid':
-                queue.append(path) # Enqueue
+            if check_cell(cell) == 'valid':
+                queue.append(path)  # Enqueue
                 cell.color = SEARCH_COLOR
                 cell.visited = 1
 
@@ -642,8 +729,8 @@ def a_star(maze: MazeType) -> bool:
     """
     start_cell = maze[maze_start.val[0]][maze_start.val[1]]
     open_list = [start_cell]
-    possible_child = [[0, 1], [0, -1], [1, 0], [-1, 0],
-                      [1, 1], [1, -1], [-1, 1], [-1, -1]]
+    possible_child = [[0, 1], [0, -1], [1, 0], [-1, 0], [1, 1], [1, -1],
+                      [-1, 1], [-1, -1]]
 
     while open_list != []:
 
@@ -666,14 +753,15 @@ def a_star(maze: MazeType) -> bool:
 
         children = []
 
-        for next in possible_child:
+        for child in possible_child:
 
-            row = current_cell.row + next[0]
-            col = current_cell.col + next[1]
+            row = current_cell.row + child[0]
+            col = current_cell.col + child[1]
 
-            if (row >= 0 and row < MAZE_SIZE and col >= 0 and col < MAZE_SIZE
-            and maze[row][col].state != 0 and maze[row][col].visited != 1
-            and maze[row][col] != start_cell):
+            if (0 <= row < MAZE_SIZE and 0 <= col < MAZE_SIZE and
+                    maze[row][col].state != 0 and
+                    maze[row][col].visited != 1 and
+                    maze[row][col] != start_cell):
 
                 children.append(maze[row][col])
 
@@ -691,8 +779,6 @@ def a_star(maze: MazeType) -> bool:
 
             child.f = child.g + child.h
 
-            # if child not in open_list:
-            #     open_list.append(child)
             open_list.append(child)
 
     return False
@@ -716,62 +802,10 @@ def main(maze: MazeType) -> None:
                 sys.exit()
 
             if event.type == pygame.KEYDOWN:
+                maze = keyboard_event(maze, event)
 
-                if event.key == pygame.K_r: maze = reset(maze)
-
-                if event.key == pygame.K_c: maze = clear(maze)
-
-                if event.key == pygame.K_SPACE:
-                    solver_running.val = True
-
-                    if maze_start.val == False:
-                        popup('No Maze Start!', EXIT_COLOR)
-
-                    elif maze_exit.val == False:
-                        popup('No Maze Exit!', EXIT_COLOR)
-
-                    elif algo_btn.states[ALGO.index('Random Backtracking')]:
-
-                        if (backtrack_solver(maze, maze_start.val[0],
-                                             maze_start.val[1])):
-
-                            popup('DONE!', START_COLOR)
-
-                        else:
-                            popup('No Exit Found!', EXIT_COLOR)
-
-                    elif algo_btn.states[ALGO.index('Breadth First')]:
-
-                        if breadth_first(maze):
-                            popup('DONE!', START_COLOR)
-
-                        else:
-                            popup('No Exit Found!', EXIT_COLOR)
-
-                    else:
-                        # A* is choosen by default though should never be
-                        # possible to not have a button selected.
-                        if a_star(maze):
-                            popup('DONE!', START_COLOR)
-
-                        else:
-                            popup('No Exit Found!', EXIT_COLOR)
-
-                    solver_running.val = False
-
-            if (event.type == pygame.MOUSEBUTTONDOWN
-            and pygame.mouse.get_pressed()[0] == 1):
-
-                    for i in range(len(algo_btn.states)):
-
-                        if algo_btn.objs[i].collidepoint(pygame.mouse.get_pos()):
-
-                            for x in range(len(algo_btn.states)):
-                                algo_btn.states[x] = False
-                                algo_btn.colors[x] = NOT_SELECTED
-
-                            algo_btn.states[i] = True
-                            algo_btn.colors[i] = SELECTED
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_event()
 
         screen_update(60)
 
@@ -840,7 +874,7 @@ STARTING_MAZE = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0,
 maze_start = Mem((0, 14))
 maze_exit = Mem((29, 14))
 solver_running = Mem(False)
-maze = [row for row in maze_maker(MAZE_SIZE, STARTING_MAZE)]
+maze = list(maze_maker(MAZE_SIZE, STARTING_MAZE))
 
 
 # ------------
@@ -858,14 +892,15 @@ instructions_start = font.render("Shift + Left Click = Maze Start (Only 1)",
                                  True, TEXT_COLOR)
 instructions_exit = font.render("Shift + Right Click = Maze Exit (Only 1)",
                                 True, TEXT_COLOR)
-instructions_run = font.render("Space = Start/Stop Maze Solver",
-                               True, TEXT_COLOR)
+instructions_run = font.render("Space = Start/Stop Maze Solver", True,
+                               TEXT_COLOR)
 instructions_reset = font.render("R = Reset Maze", True, TEXT_COLOR)
 instructions_clear = font.render("C = Clear Maze", True, TEXT_COLOR)
-maze_bg = pygame.Rect(MAZE_BG_PADDING, MAZE_BG_PADDING + TOP_PADDING,
-                      MAZE_BG_W, MAZE_BG_H)
+maze_bg = pygame.Rect(MAZE_BG_PADDING, MAZE_BG_PADDING + TOP_PADDING, MAZE_BG_W,
+                      MAZE_BG_H)
 algo_btn = Btn(ALGO, SCREEN_W - 225, 5, 200, 45, 5)
 algo_btn.states[2] = True
 algo_btn.colors[2] = SELECTED
 
-if __name__ == '__main__': main(maze)
+if __name__ == '__main__':
+    main(maze)
