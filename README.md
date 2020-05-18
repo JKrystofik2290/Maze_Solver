@@ -1,7 +1,7 @@
 # Maze Solver
 I love visualizing algorithms so I built this portfolio project showing how different pathfinding algorithms solve a maze. Though the program launches with a starting maze the user can draw any maze they like to challenge the algorithms. All algorithms in this project are allowed to move diagonally.
 
-![main screen](Images/main_screen.jpg)![main screen](Images/Solved.jpg)
+![main screen](Images/main_screen.jpg)(Images/Solved.jpg)
 
 ## The Pathfinders
 **Random Backtracking**
