@@ -1,6 +1,11 @@
-# Maze_Solver
-Solves any maze (if maze is possible to complete) using recursive backtracking algorithm
+# Maze Solver
+I love visualizing algorithms so I built this portfolio project showing how different pathfinding algorithms solve a maze. Though the program launches with a starting maze the user can draw any maze they like to challenge the algorithms.
+
+## The Pathfinders
+**Random Backtracking**
+**Breadth-First Search**
+**A***
 
 
--yapf run to --style google
--pylint run with default and with pylintrc.py (from google)
+
+- https://guides.github.com/features/mastering-markdown/
