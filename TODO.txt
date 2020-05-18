@@ -1,19 +1,11 @@
-# run pylint, yapf
-    # add noted that these where run
 # make test and run pytest
+
 # get an online review of code
     # https://codereview.stackexchange.com/
     # document results and changes from review
-# Update README.txt on github (DOCUMENT WELL!!!!)
-    # follow google python syle guide
-        # http://google.github.io/styleguide/pyguide.html
-    # Breadth First prioritizes diagonals....explaing why
-        # IMPROVMENTS/LOOKING BACK????
-        # explaing how it works
-        # very in-efficiant especially with larger data sets
-        # https://techwithtim.net/tutorials/breadth-first-search/
-    # rehash any notes in code in readme
 
+# folderize project
+    # add images for readme
 
 
 # https://github.com/google

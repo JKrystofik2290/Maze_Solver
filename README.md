@@ -1,6 +1,8 @@
 # Maze Solver
 I love visualizing algorithms so I built this portfolio project showing how different pathfinding algorithms solve a maze. Though the program launches with a starting maze the user can draw any maze they like to challenge the algorithms. All algorithms in this project are allowed to move diagonally.
 
+![Main Screen](/images/main_screen.png)
+
 ## The Pathfinders
 **Random Backtracking**
 This algorithm is to serve as a kind of baseline as it is the most inefficent and "dumb" algorithm in the project. Does not know where the exit is and moves around randomly searching for it but if it runs into a deadend or itself uses recursive backtracking to randomly choose another direction that has not yet been checked. Since this algorithm is random there is a theoretical chance it could find the shortest path to the exit.... its just very very unlikely to do so.
